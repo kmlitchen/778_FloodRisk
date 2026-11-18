@@ -1,45 +1,42 @@
 // Katie Litchen GEOG 778 Prj
-// Updated 15Nov2026
-// "###" for placeholder code not in use but i am hoarding it anyways  
+// Updated 17Nov2026
+// "###" for placeholder code not in use but i am hoarding it anyways
 
-// original SVI feature layer url: "https://services3.arcgis.com/ZvidGQkLaDJxRSJ2/arcgis/rest/services/CDC_ATSDR_Social_Vulnerability_Index_2022_USA/FeatureServer/2",
+// original SVI feature layer url: "https://services3.arcgis.com/ZvidGQkLaDJxRSJ2/arcgis/rest/services/CDC_ATSDR_Social_Vulnerability_Index_2022_USA/FeatureServer/2", // edited for TX scope, field updates for customization
 
 //** ESRI Settings:
-//  esri.js modules needed: ### remove dead-code for unused modules at end of prj
+//  esri.js modules needed: 
  require([
     // for api key:
     "esri/config",
     // for map elements, custom basemap
-    "esri/Map", "esri/views/MapView", "esri/Basemap","esri/layers/VectorTileLayer",
+    "esri/Map", "esri/views/MapView", "esri/Basemap","esri/layers/VectorTileLayer", "esri/widgets/BasemapGallery/support/LocalBasemapsSource",
     // for all widgets used
-    "esri/widgets/BasemapGallery","esri/widgets/Expand","esri/widgets/Locate","esri/widgets/Search","esri/widgets/Editor","esri/widgets/Legend","esri/widgets/Home","esri/widgets/LayerList",
+    "esri/widgets/BasemapGallery", "esri/widgets/Expand","esri/widgets/Locate","esri/widgets/Search","esri/widgets/Legend","esri/widgets/Home","esri/widgets/LayerList",
     // for esri layers
-    "esri/layers/FeatureLayer",
-    "esri/layers/GroupLayer",
-    //eh?
-    "esri/core/reactiveUtils",
-    "esri/renderers/ClassBreaksRenderer",
-    // all modules added to fx - 
-], function(esriConfig, Map, MapView, Basemap, vectorTileLayer, BasemapGallery, Expand, Locate, Search, Editor, Legend, Home, LayerList, FeatureLayer, GroupLayer, reactiveUtils, ClassBreaksRenderer,) {   
-        
+    "esri/layers/FeatureLayer","esri/layers/GroupLayer",
+    // other
+    "esri/core/reactiveUtils", "esri/renderers/ClassBreaksRenderer",
+    ],
+    // add all modules to fx - 
+    function(esriConfig, Map, MapView, Basemap, vectorTileLayer, LocalBasemapsSource, BasemapGallery, Expand, Locate, Search, Legend, Home, LayerList, FeatureLayer, GroupLayer, reactiveUtils, ClassBreaksRenderer,) {   
+    
     // esri api key:
     esriConfig.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurBvZ7IXFuSOhRBuDgv645DOBpnCJ2vtGJsSqd0m31lu7G8oTSCniq7WBlH5N3K2i5Kk1zQ90Yxo4NRi0pv9a9tVhNCaTXh4UYBVSuMTZ4n-VHPYlh3hbIHglPgtC4dS9xt9DvdwtH300t76D_qaoPY1hHx-ZWazuU7A71NQteoVL5YMZ3d0qyiM8FhAB_8wsn9Lfxg-Z0qlqMFoRqQ2XStDdlWe0dU69PsLBWTeob7thAT1_t2Pq0hM2"
 
-    
+    ////////////////////
 
 //** Basic Map Elements: 
-    // tile layer to hold custom basemap: // ### Topo looks cleaner
-    const basemapLayer = new vectorTileLayer({
-    portalItem: { 
-        id: "659e7c1b1e374f6c8a89eefe17b23380" // "outdoor" tile layer from the living atlas
-        }
+    // tile layer to hold custom basemap: topo-vector split w/ label sandwich
+    const topoBasemap = new Basemap({
+    baseLayers: [new vectorTileLayer({portalItem: { id: "4089fb89a3314f67ac69528608c8c614"}})],
+    referenceLayers: [new vectorTileLayer({portalItem: { id: "928cf35778b2424db914e501a3bfb5be"}})],
+    thumbnailUrl: Basemap.fromId("topo-vector").thumbnailUrl,
+    title: "Topographic",
     });
 
     // map element: 
-    const map = new Map({
-    basemap: "topo-vector"
-    // basemap: new Basemap({baseLayers: [basemapLayer],}) // set to custom layer <- ### removed for topo
-    });
+    const map = new Map({basemap: topoBasemap}); //### replaces topo-vector
         
     // map view + properties:
     const view = new MapView({  
@@ -47,26 +44,59 @@
     center: [-95.36, 29.76], // Scaled to HTX
     zoom: 10,                 
     container: "Map", // div element
-    constraints: {
-        minScale: 100,
-        maxScale: 600000, // limiting max scale (instead of map extent) to keep focus around HTX
-    },
-    });                         
-
+    constraints: {minScale: 100, maxScale: 600000,}, // limiting max scale (instead of map extent) to keep focus around HTX
+    });      
     
+    ////////////////////
 
 //** Widgets and Customization:
     // move +/- zoom buttons:
     view.ui.move("zoom", "bottom-right");
+
+    // ### code template for custom basemap label sandwich
+    // community, charted territory, navigation, and antique are all single layer vector basemaps
+    // ^ would require custom vector tile style editor replacement for each to render labels on top of layers... time intensive, low reward upgrade
+    // const topoBasemap = new Basemap({
+    // baseLayers: [new vectorTileLayer({portalItem: { id: "4089fb89a3314f67ac69528608c8c614"}})],
+    // referenceLayers: [new vectorTileLayer({portalItem: { id: "928cf35778b2424db914e501a3bfb5be"}})],
+    // thumbnailUrl: Basemap.fromId("topo-vector").thumbnailUrl,
+    // title: "Topographic",
+    // });
+
     
+    // basemap ids for custom basemap gallery: 
+    const chartedTerritoryBasemap = new Basemap({id: "charted-territory", portalItem: {id: "303e75b27af043fd835c981ab9accf84"}});
+    const communityBasemap = new Basemap({id: "community", portalItem: {id: "184f5b81589844699ca1e132d007920e"}});
+    const humanGRGBasemap = new Basemap({id: "human-grg", portalItem: {id: "6a6bf92e7824417db632aa1d058a13b4"}});
+    const humanGRGDarkBasemap = new Basemap({id: "human-grg-dark", portalItem: {id: "69b9605f8a734c6f861148bb8e5a1f40"}});
+    const newspaperBasemap = new Basemap({id: "newspaper", portalItem: {id: "e3c062eedf8b487b8bb5b9b08db1b7a9"}}); // looks kinda meh
+    const antiqueBasemap = new Basemap({id: "antique", portalItem: {id: "b69f2876ce4c4e9db185cdc857fcebc7"}});
+    const terrainBasemap = new Basemap({id: "terrain", portalItem: {id: "2ef1306b93c9459ca7c7b4f872c070b9"}});
+
     // basemap gallery widget:
     const basemapGallery = new BasemapGallery({
     view: view,
+    source: new LocalBasemapsSource({ // comment out "source" bracket for esri default basemap gallery
+        basemaps: [
+        topoBasemap,
+        terrainBasemap,
+        communityBasemap, 
+        chartedTerritoryBasemap, 
+        humanGRGBasemap, 
+        humanGRGDarkBasemap, 
+        Basemap.fromId("hybrid"),
+        Basemap.fromId("streets-navigation-vector"),
+        //Basemap.fromId("streets-vector"), // streets is too orange
+        antiqueBasemap, 
+        //newspaperBasemap, // style is distracting
+        ]
+    })
     });
+
     const basemapExpand = new Expand({ // put basemap gallery widget in an expandable tab 
         view: view,
         content: basemapGallery,
-        expandTooltip: "Select Basemap", // title display on hover
+        expandTooltip: "Select Basemap", // text displayed on hover
     });
     view.ui.add(basemapExpand, "top-right"); //set expandable tab location
 
@@ -103,7 +133,7 @@
     });
     view.ui.add(layerExpand, "top-right"); // set layer-toggle button location
 
-
+    ////////////////////
 
 //** FEMA Flood Hazard Layer:
     // renderer - flood hazard feature layer 1 - color fill:
@@ -143,7 +173,7 @@
         }]
       };
 
-    // renderer - flood hazard feature layer 2 - hashing + color for levee:
+    // renderer - flood hazard feature layer 2 - hashing + color for levees:
     const floodRendererPattern = {
       type: "unique-value",
       field: "esri_symbology",
@@ -186,17 +216,18 @@
         layers: [floodLayerPattern, floodLayerColor]
     });
 
-
+    ////////////////////
 
 //** Demographic Feature Layer - Census Tracts, SVI: 
+    //**Popups:
     //popup content - entire tract overview:
     const overallTractPopup = {
     "title": "<b>{Tract}</b>", // census tract ID
     "content": "Total Population: <b>{E_TOTPOP}</b> people <br> Tract Size: <b>{AREA_SQMI}</b> square miles <br> Population Density: <b>{Density}</b> people per square mile <br><br> "+ //{COUNTY} <br> list county or nah?
-    "<b>Social Vulnerability Index (SVI):</b><br> Composite SVI Score: <b>{Overall_SVI}</b><br><br>" +
-    "<b>SVI Theme Component Scores:</b> <br> Socioeconomic Status:<b> {SVI_1}</b><br> Household Characteristics:<b> {SVI_2} </b> <br> Racial & Ethnic Minority Status:<b> {SVI_3} </b><br> Housing Type & Transportation:<b> {SVI_4} </b><br>" +
+    "<b>Social Vulnerability Index (SVI):</b><br> Composite Percentile Ranking: <b>{Overall_SVI}</b><br><br>" +
+    "<b>SVI Component (Theme) Rankings:</b> <br> Socioeconomic Status:<b> {SVI_1}</b><br> Household Characteristics:<b> {SVI_2} </b> <br> Racial & Ethnic Minority Status:<b> {SVI_3} </b><br> Housing Type & Transportation:<b> {SVI_4} </b><br>" +
     "<br> <i>Percentile ranking values range from 0 to 1 with higher values indicating greater vulnerability." +
-    "<p><span style='font-size: x-small;'> <br> Data From the Centers for Disease Control and Prevention and Agency for Toxic Substances and Disease Registry 2022 Social Vulnerability Index.</span></p>",
+    "<p><span style='font-size: x-small;'> <br> Data From the Centers for Disease Control and Prevention and Agency for Toxic Substances and Disease Registry 2022 Social Vulnerability Index. Percentile rankings based on national results.</span></p>",
     fieldInfos: [
     {fieldName: "Density", format: {places: 0, digitSeparator: true}}, // places: rounding precision, separator: commas in digits > 1000
     {fieldName: "E_TOTPOP", format: {digitSeparator: true}},
@@ -215,7 +246,7 @@
     "content": "<b>Social Vulnerability Index (SVI):</b><br> Composite SVI Score: <b>{Overall_SVI}</b><br><br>" +
     "<b>SVI Theme Component Scores:</b> <br> Socioeconomic Status:<b> {SVI_1}</b><br> Household Characteristics:<b> {SVI_2} </b> <br> Racial & Ethnic Minority Status:<b> {SVI_3} </b><br> Housing Type & Transportation:<b> {SVI_4} </b><br>" +
     "<br> <i>Percentile ranking values range from 0 to 1 with higher values indicating greater vulnerability." +
-    "<p><span style='font-size: x-small;'><br> Data From the Centers for Disease Control and Prevention and Agency for Toxic Substances and Disease Registry 2022 Social Vulnerability Index.</span></p>",
+    "<p><span style='font-size: x-small;'><br> Data From the Centers for Disease Control and Prevention and Agency for Toxic Substances and Disease Registry 2022 Social Vulnerability Index. Percentile rankings based on national results.</span></p>",
     fieldInfos: [
     {fieldName: "Overall_SVI", format: {places:2}},
     {fieldName: "SVI_1", format: {places:2}},
@@ -230,9 +261,9 @@
     "title": "<b>{Tract}</b>", // census tract ID
     "content": " <b>Theme 1 - Socioeconomic Status: </b><br>SVI Percentile Ranking: <b>{SVI_1}</b><br><br>" +
     "<b>Detailed Demographics:</b> <br><i> Percentage of the population:</i>" +
-    "<br> At least 150% below poverty level:<b> {expression/POV150}%</b> <br> Unemployed (age 16+):<b> {expression/UNEMP}%</b> <br> Spending \u2265 30% of income on housing:<b> {expression/HBURD}%</b> <br> Without high school diploma (age 25+):<b> {expression/NOHSDP}%</b> <br> Without health insurance:<b> {expression/UNINSUR}%</b><br>" +
+    "<br> Living \u2265 150% below poverty level:<b> {expression/POV150}%</b> <br> Unemployed (age 16+):<b> {expression/UNEMP}%</b> <br> Spending \u2265 30% of income on housing:<b> {expression/HBURD}%</b> <br> Without high school diploma (age 25+):<b> {expression/NOHSDP}%</b> <br> Without health insurance:<b> {expression/UNINSUR}%</b><br>" +
     "<br> <i>Percentile ranking values range from 0 to 1 with higher values indicating greater vulnerability."+
-    "<p><span style='font-size: x-small;'> <br> CDC/ATSDR 2022 SVI and U.S. Census variables from the 5-year American Community Survey (ACS).</span></p>",
+    "<p><span style='font-size: x-small;'> <br> CDC/ATSDR 2022 SVI and U.S. Census variables from the 5-year American Community Survey (ACS). SVI percentile ranking based on national results.</span></p>",
     expressionInfos: [
     {name: "POV150", expression: "Round(($feature.E_POV150 / $feature.E_TOTPOP) * 100, 1)"},
     {name: "UNEMP", expression: "Round(($feature.E_UNEMP / $feature.E_TOTPOP) * 100, 1)"},
@@ -250,7 +281,7 @@
     "<b>Detailed Demographics:</b> <br><i> Percentage of the population:</i>" +
     "<br> Aged 65 & older:<b> {expression/AGE65}%</b> <br> Aged 17 & younger:<b> {expression/AGE17}%</b> <br> With a disability:<b> {expression/DISABL}%</b> <br> Single-parent households:<b> {expression/SNGPNT}%</b> <br> With limited English language proficiency:<b> {expression/LIMENG}%</b><br>" +
     "<br> <i>Percentile ranking values range from 0 to 1 with higher values indicating greater vulnerability."+
-    "<p><span style='font-size: x-small;'> <br> CDC/ATSDR 2022 SVI and U.S. Census variables from the 5-year American Community Survey (ACS).</span></p>",
+    "<p><span style='font-size: x-small;'> <br> CDC/ATSDR 2022 SVI and U.S. Census variables from the 5-year American Community Survey (ACS). SVI percentile ranking based on national results.</span></p>",
     expressionInfos: [
     {name: "AGE65", expression: "Round(($feature.E_AGE65 / $feature.E_TOTPOP) * 100, 1)"},
     {name: "AGE17", expression: "Round(($feature.E_AGE17 / $feature.E_TOTPOP) * 100, 1)"},
@@ -269,7 +300,7 @@
     "<br> With racial/ethnic minority status:<b> {expression/MINRTY}%</b> <br>" +
     "<br> Racial and ethnic minority groups include: <i>Hispanic or Latino (of any race), Black and African American, American Indian and Alaska Native, Asian, Native Hawaiian and Other Pacific Islander. <br>"+
     "<br> <i>Percentile ranking values range from 0 to 1 with higher values indicating greater vulnerability."+
-    "<p><span style='font-size: x-small;'> <br> CDC/ATSDR 2022 SVI and U.S. Census variables from the 5-year American Community Survey (ACS).</span></p>",
+    "<p><span style='font-size: x-small;'> <br> CDC/ATSDR 2022 SVI and U.S. Census variables from the 5-year American Community Survey (ACS). SVI percentile ranking based on national results.</span></p>",
     expressionInfos: [{name: "MINRTY", expression: "Round(($feature.E_MINRTY / $feature.E_TOTPOP) * 100, 1)"},],
     fieldInfos: [{fieldName: "SVI_3", format: {places:2}},]
     };
@@ -281,7 +312,7 @@
     "<b>Detailed Demographics:</b> <br><i> Percentage of the population:</i> <br> Living in in group quarters:<b> {expression/GROUPQ}%</b>"+ 
     "<br><br><i> Percentage of households:</i> <br> In structures with \u2265 10 units:<b> {expression/MUNIT}%</b> <br> In mobile homes:<b> {expression/MOBILE}%</b> <br> With more people than rooms:<b> {expression/CROWD}%</b> <br> With no vehicle available:<b> {expression/NOVEH}%</b><br>" +
     "<br> <i>Percentile ranking values range from 0 to 1 with higher values indicating greater vulnerability."+
-    "<p><span style='font-size: x-small;'> <br> CDC/ATSDR 2022 SVI and U.S. Census variables from the 5-year American Community Survey (ACS).</span></p>",
+    "<p><span style='font-size: x-small;'> <br> CDC/ATSDR 2022 SVI and U.S. Census variables from the 5-year American Community Survey (ACS). SVI percentile ranking based on national results.</span></p>",
     expressionInfos: [
     {name: "GROUPQ", expression: "Round(($feature.E_GROUPQ / $feature.E_TOTPOP) * 100, 1)"},
     {name: "MUNIT", expression: "Round(($feature.E_MUNIT / $feature.E_HH) * 100, 1)"},
@@ -292,7 +323,7 @@
     fieldInfos: [{fieldName: "SVI_4", format: {places:2}},]
     };
 
-    //popup content - entire tract overview:
+    //popup content - population density:
     const densityPopup = {
     "title": "<b>{Tract}</b>", // census tract ID
     "content": "<b>Population Density:</b><br> <b>{Density}</b> people per square mile <br><br>" +
@@ -305,6 +336,7 @@
     ],
     };
 
+    //**Renderers:
     // renderer - entire tract overview:
     const overallTractRenderer = {
     type: "simple",
@@ -407,8 +439,8 @@
         ]
     });
 
-    // renderer - SVI theme 4, housing and transportation (BLUE ON BLUE UGH)
-    // const theme4SVIRenderer = new ClassBreaksRenderer({
+    // renderer - SVI theme 4, housing and transportation 
+    // const theme4SVIRenderer = new ClassBreaksRenderer({ // (BLUE ON BLUE UGH)
     // field: "RPL_THEME4", // <- keep field as the RPL theme for N/A tracts to display correctly
     //     defaultSymbol: {type: "simple-fill", color: "#948c8c", outline: null}, // default if null (-999)
     //     defaultLabel: "N/A",
@@ -426,7 +458,7 @@
     //     ]
     // });
     
-    // const theme4SVIRenderer = new ClassBreaksRenderer({
+    // const theme4SVIRenderer = new ClassBreaksRenderer({ // (BLUE ON BLUE UGH)
     // field: "RPL_THEME4", // <- keep field as the RPL theme for N/A tracts to display correctly
     //     defaultSymbol: {type: "simple-fill", color: "#948c8c", outline: null}, // default if null (-999)
     //     defaultLabel: "N/A",
@@ -443,7 +475,7 @@
     //     symbol: { type: "simple-fill", color: "rgb(8, 130, 156)", outline: null, },}
     //     ]
     // });
-    const theme4SVIRenderer = new ClassBreaksRenderer({
+    const theme4SVIRenderer = new ClassBreaksRenderer({ // grey to avoid blue on blue
     field: "RPL_THEME4", // <- keep field as the RPL theme for N/A tracts to display correctly
         defaultSymbol: {type: "simple-fill", color: "#ddc3c3", outline: null}, // default if null (-999)
         defaultLabel: "N/A",
@@ -480,6 +512,7 @@
         ]
     });
 
+    //** Feature Layers:
     // census tracts feature layer - tract overview, empty polygons:
     const overallTract = new FeatureLayer({
     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/SVI2022_US_tract__TX/FeatureServer", // created new hosted layer for edits
@@ -550,18 +583,18 @@
     visible: false, // layer is de-selected on-load
     });
 
-    // combine into one demographic layer:
+    // combine choropleths into one demographic layer:
     const demoLayer = new GroupLayer({
         title: "Demographic Categories",
-        visibilityMode: "exclusive", // "independent" for both to show/hide with the parent, "exclusive" for radio-button style
+        visibilityMode: "exclusive", // "exclusive" for radio-button style
         layers: [density, theme4SVI, theme3SVI, theme2SVI, theme1SVI, compositeSVI],
         visible: false, // layer is de-selected on-load
     });
 
-    // combine into one census tract layer:
+    // combine demo layer + tract outlines into one census tract layer:
     const tractLayer = new GroupLayer({
         title: "Census Tract Demographics",
-        visibilityMode: "independent", // "independent" for both to show/hide with the parent, "exclusive" for radio-button style
+        visibilityMode: "independent", // "independent" all layers on/off w/ group-layer parent
         layers: [demoLayer, overallTract]
     });
 
@@ -572,6 +605,7 @@
     map.add(floodLayer); // ** one add many at the end, individual adds for testing/dev
     //map.add(demoTract);
       
+    ////////////////////
 
 //** Legend Elements:
     // legend constructor:
@@ -588,38 +622,38 @@
     });
     view.ui.add(legendExpand, "top-left"); // set legend location
 
+    ////////////////////
+
 //** Watch, Reactive fx:
 
-    // tract overview pop-up disappears when demographic layer selected (couldn't get it to prioritize instead)
+    // tract overview pop-up disappears when demographic layer selected (couldn't get it to de-prioritize instead)
     reactiveUtils.watch(
     () => demoLayer.visible,
-    (isVisible) => {
-        overallTract.popupEnabled = !isVisible;
-    },
+    (isVisible) => {overallTract.popupEnabled = !isVisible;},
     { initial: true } // state is set right as map loads
-);
-    
-// layer becomes selected once zoomed // the logic is not working out
-//     reactiveUtils.watch(
-//   () => view.scale,
-//   (scale) => {
-//     // Example: Hide layer if zoom level is less than (zoomed out past) 10
-//     if (scale >= 288895.277144 && scale <300000) {
-//         console.log("yee")
-//         console.log("haw")
-//         console.log(scale)
-//       demoTract.visible = true;
-//     } else if (demoTract.visible = false && scale < 288895.277144){
-//       demoTract.visible = false;
-//       console.log("howdy")
-//       console.log(scale)
-//     // } else if (demoTract.visible = false && scale >= 288895.277144) {
-//     //   demoTract.visible = false;
-//     //   console.log("hooooo")
-//     //   console.log(scale)
-//     } else {
-//         console.log(scale)
-//     }
-//   }
-// );
+    );
+
+    // update open pop-up template when layer selection changes (bug-ish but it seems to close popup when it fails which would be next intent anyways)
+    view.when(() => {
+    reactiveUtils.watch( 
+    () => view.map.allLayers.map((layer) => layer.visible), // watch layer visibility in map view
+    () => {if (view.popup.visible ) {view.popup.open({fetchFeatures: true});}} // if a popup is open, re-query visible layer & load PopupTemplate
+    );
+    });
+
+
+
+
+    //map.basemap.load().then(() => {
+//   // Verify how the layers are split
+//   console.log("Bottom layers:", map.basemap.baseLayers.toArray());
+//   console.log("Top reference layers:", map.basemap.referenceLayers.toArray());
+
+  // Example: Swap out the bottom base layer while keeping the top labels
+  //const customBase = new TileLayer({ url: "https://your-custom-base-tile-url" });
+  //map.basemap.baseLayers.removeAll();
+  //map.basemap.baseLayers.add(customBase);
+//});
+
+    //////////////////// the end ////////////////////
 });
